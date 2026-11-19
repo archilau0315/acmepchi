@@ -122,9 +122,9 @@ def restore_latest(cfg: dict, logger) -> dict:
         raise GuardError(f"未找到 {cfg['product_install_dir']} 安装目录")
     if _app_running(cfg["product_exe"]):
         raise GuardError(f"{cfg['product_exe']} 正在运行，请先完全退出后再还原")
-    snapshot = backup.latest_backup()
+    snapshot = backup.latest_backup(Path(info["target_language_dir"]).name)
     if not snapshot:
-        raise GuardError("没有可用的备份")
+        raise GuardError("没有可用的 MUI 备份")
     result = backup.restore(snapshot, info["target_language_dir"], info["target_dir"] / "uilanguage.dat")
     logger.info("已从 %s 还原 %d 个文件", snapshot, result["restored"])
     return result

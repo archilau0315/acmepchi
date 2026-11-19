@@ -45,8 +45,8 @@ def main() -> int:
                 print(f"  - {name}")
             if len(plan["to_copy"]) > 10:
                 print(f"  ... 共 {len(plan['to_copy'])} 个")
-        if plan["excluded"]:
-            print(f"排除不替换：{', '.join(plan['excluded'])}")
+            if plan["excluded"]:
+                print(f"排除不替换：{', '.join(plan['excluded'])}")
         return 0
 
     if args.command == "install":

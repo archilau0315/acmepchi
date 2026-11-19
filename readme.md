@@ -36,7 +36,7 @@ acmepchi/
 │  ├─ docs/             # 开发记录 / dev notes
 │  ├─ readme.md         # v30 详细说明 / v30 details
 │  └─ debug_log_1.md    # v30 变更记录 / v30 change log
-├─ acmepchi29/          # MEP Designer 29 汉化工具（开发中）/ v29 tool (WIP)
+├─ acmepchi29/          # MEP Designer 29 汉化工具（代码完成，待构建号统一）/ v29 tool (code done, awaiting matching builds)
 └─ readme.md            # 本文件 / this file
 ```
 

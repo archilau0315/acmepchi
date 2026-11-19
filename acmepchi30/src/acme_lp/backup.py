@@ -43,10 +43,13 @@ def create_backup(language_dir: Path, uilanguage_dat: Path) -> Path:
     return dest
 
 
-def latest_backup() -> Path | None:
+def latest_backup(language_dir_name: str | None = None) -> Path | None:
+    """最近一份备份；给定语言目录名时只认含该目录的备份（如 en）。"""
     if not paths.BACKUP_ROOT.exists():
         return None
     items = [p for p in paths.BACKUP_ROOT.iterdir() if p.is_dir() and (p / "manifest.json").exists()]
+    if language_dir_name:
+        items = [p for p in items if (p / language_dir_name).is_dir()]
     return max(items, key=lambda p: p.name) if items else None
 
 

@@ -1,0 +1,16 @@
+{
+  "product": "MEP Designer 29",
+  "product_reg_root": "MEP Designer",
+  "product_exe": "MEP Designer.exe",
+  "product_install_dir": "MEP Designer 29",
+  "reg_major": "29.",
+  "source_product": "Archicad 29",
+  "source_reg_root": "Archicad",
+  "source_exe": "Archicad.exe",
+  "source_install_dir": "Archicad 29",
+  "source_language_dir": "zh-CN",
+  "target_language_dir": "en",
+  "mode": "replace",
+  "exclude": ["ACSpecFolders.dll.mui"],
+  "notes": "mode=replace: 用中文 .mui 覆盖目标 en 目录，保持 uilanguage.dat 不变；mode=switch: 建立 zh-CN 目录并改写 uilanguage.dat。exclude: 永不替换的文件（ACSpecFolders 中文版会导致程序 5 秒内静默退出）"
+}
