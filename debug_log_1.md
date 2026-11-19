@@ -13,3 +13,5 @@
 | 7 | 2026-11-19 13:52 | 回滚 | 从备份还原 `en\MEPPluginUI/MEPElements/MEPAPI.dll.mui` | 三个文件 SHA256 与备份一致，恢复到英文原版，用于 A/B 定位崩溃原因 |
 | 8 | 2026-11-19 14:05 | 新增 | 创建工具骨架：`paths/backup/verify/installer/cli/gui`、`data/mui-map.json`、`tests/test_mapping.py`、`bin/acmepchi.bat`、双语 `readme.md` | 修复两处 bug：配置根目录定位（`parents[2]`）、注册表键名拼装；`cli status` 输出 85 个待复制，单元测试 3/3 通过 |
 | 9 | 2026-11-19 13:58 | 全量安装 | 还原基线后执行 `install`，85 个中文 `.mui` 覆盖 `MEP Designer 30\en\`，`status` 显示待复制 0 / 已相同 85 | 首次安装因 MEP Designer 运行中占用文件报 `PermissionError`，强制关闭后成功；已补"程序运行中拒绝安装/还原"闸门，备份 `backup\20261119-135821` |
+| 10 | 2026-11-19 14:39 | 新增 | 新建 `src/acme_lp/we_i18n.py`：按菜单 GUID 从 Archicad 中文版工作环境 XML 取官方译法，原位替换 MEP 的 `Command Layouts\*.xml` 中 `title`，新增 CLI `menu` / `menu-restore`（支持 `--dry-run`） | 实测替换 154 处、可译 171 条；备份 `backup\we-20261119-143918`；验证启动 35 秒稳定 |
+| 11 | 2026-11-19 14:41 | 试验 | `en\ProductResourceProvider.dll.mui` 换成 Archicad 中文版，启动 30 秒稳定（产品级菜单文案来源） | 单文件替换未触发崩溃，待用户目视确认菜单栏是否变中文；原文件已备份可还原 |
