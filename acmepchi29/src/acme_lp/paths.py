@@ -6,6 +6,7 @@ import ctypes
 import json
 import logging
 import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -107,6 +108,26 @@ def find_product_dir(cfg: dict, which: str = "target") -> Path | None:
         if (candidate / exe_name).exists():
             return candidate
     return None
+
+
+def app_running(cfg: dict) -> bool:
+    """按安装目录判断目标版本是否在运行（同名 exe 的其它版本不算）。"""
+    name = cfg["product_exe"].rsplit(".", 1)[0]
+    marker = cfg["product_install_dir"]
+    script = (
+        f"@(Get-Process -Name '{name}' -ErrorAction SilentlyContinue | "
+        f"Where-Object {{ $_.Path -like '*{marker}*' }}).Count"
+    )
+    try:
+        out = subprocess.run(
+            ["powershell", "-NoProfile", "-Command", script],
+            capture_output=True,
+            text=True,
+            errors="ignore",
+        ).stdout.strip()
+        return out not in ("", "0")
+    except OSError:
+        return False
 
 
 def file_version(path: Path) -> str:

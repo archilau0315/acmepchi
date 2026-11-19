@@ -12,3 +12,5 @@
 | 8 | 2026-11-19 18:24 | dictbuild | 英文源优先取当前安装的 `en`（仍是英文时），不再默认取历史备份；重建词典 12595 条 | 更新后旧备份是 3000 版英文，直接比对会错位 |
 | 9 | 2026-11-19 18:28 | 实测 | 还原工作环境 → 重新汉化：XML 95 处、bin 3520 处；WMI 启动 MEP 29 后跨命令持续存活（35 秒以上），无 Bug Reporter；`we --dry-run` 剩余命中 0 | 跨构建整文件替换 MUI 实测 15 秒内退出，故明确不做 |
 | 10 | 2026-11-19 18:35 | 打包 | PyInstaller 打出 `dist\ACMEPCHI-29.exe`（11.3 MB，onefile/windowed/uac-admin）；测试 3 项通过；实测 exe 启动后窗口标题「ACMEPCHI · MEP Designer 29 汉化 v0.1.0」 | 交付：用户按自己安装的版本选用 29 或 30 的 exe |
+| 11 | 2026-11-19 19:05 | 修复 | `paths.app_running` 改为按 `product_install_dir` 过滤同名进程；`wepatch.apply` 的 bin 阶段加 `we_bins` 开关（默认 false） | 同名 `MEP Designer.exe` 的 30 在运行时会让 29 误判「正在运行」而拒绝安装；「最近的工作环境」属最近运行缓存，`Profile.xml` 按 GUID 引用其方案，改写后会出现「工作环境配置文件数据错误：未找到方案」并导致顶部菜单消失，故不再改写 |
+

@@ -9,18 +9,9 @@ from pathlib import Path
 from . import backup, paths, verify, wepatch
 
 
-def _app_running(exe_name: str) -> bool:
-    """目标程序运行时资源文件会被占用，安装前必须先退出。"""
-    try:
-        out = subprocess.run(
-            ["tasklist", "/FI", f"IMAGENAME eq {exe_name}"],
-            capture_output=True,
-            text=True,
-            errors="ignore",
-        ).stdout
-        return exe_name.lower() in out.lower()
-    except OSError:
-        return False
+def _app_running(cfg: dict) -> bool:
+    """目标版本运行时资源文件会被占用，安装前必须先退出。"""
+    return paths.app_running(cfg)
 
 
 class GuardError(RuntimeError):
@@ -58,7 +49,7 @@ def detect(cfg: dict) -> dict:
                 f"{cfg['source_install_dir']} 为 {info['source_version']}；整文件替换 MUI 会导致程序退出，"
                 "请将 replace_mui 设为 false（仅汉化工作环境）"
             )
-    if target and _app_running(cfg["product_exe"]):
+    if target and _app_running(cfg):
         info["errors"].append(f"{cfg['product_exe']} 正在运行，请先完全退出后再安装")
     return info
 
@@ -137,7 +128,7 @@ def restore_latest(cfg: dict, logger) -> dict:
     info = detect(cfg)
     if not info["target_dir"]:
         raise GuardError(f"未找到 {cfg['product_install_dir']} 安装目录")
-    if _app_running(cfg["product_exe"]):
+    if _app_running(cfg):
         raise GuardError(f"{cfg['product_exe']} 正在运行，请先完全退出后再还原")
     if not cfg.get("replace_mui", True):
         return wepatch.restore_latest(cfg, logger)

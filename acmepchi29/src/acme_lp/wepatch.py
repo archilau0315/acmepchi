@@ -49,18 +49,9 @@ class WorkEnvError(RuntimeError):
     """工作环境汉化前置条件不满足。"""
 
 
-def app_running(exe_name: str) -> bool:
-    """目标程序运行中时其工作环境文件被占用，必须先退出。"""
-    try:
-        out = subprocess.run(
-            ["tasklist", "/FI", f"IMAGENAME eq {exe_name}"],
-            capture_output=True,
-            text=True,
-            errors="ignore",
-        ).stdout
-        return exe_name.lower() in out.lower()
-    except OSError:
-        return False
+def app_running(cfg: dict) -> bool:
+    """目标版本运行中时其工作环境文件被占用，必须先退出。"""
+    return paths.app_running(cfg)
 
 
 def set_readonly(path: Path, readonly: bool) -> None:
@@ -243,7 +234,7 @@ def _write_manifest(backup: Path, entries: list[dict]) -> None:
 
 def apply(cfg: dict, logger, dry_run: bool = False, fix_length: bool = False) -> dict:
     """汉化工作环境 XML 与用户级 bin；默认幂等，可重复执行。"""
-    if not dry_run and app_running(cfg["product_exe"]):
+    if not dry_run and app_running(cfg):
         raise WorkEnvError(f"{cfg['product_exe']} 正在运行，请先完全退出")
     mep_dir = paths.find_product_dir(cfg, "target")
     if not mep_dir:
@@ -266,14 +257,15 @@ def apply(cfg: dict, logger, dry_run: bool = False, fix_length: bool = False) ->
 
     bin_plan: list[tuple[Path, bytes, int]] = []
     traces: list[str] = []
-    for target in _bin_files(cfg):
-        label = _bin_rel(cfg, target)
-        local: list[str] = []
-        data, hits = _patch_bin(target.read_bytes(), bin_table, local, fix_length)
-        if hits:
-            bin_plan.append((target, data, hits))
-            traces.append(f"  {label}（{hits} 处）")
-            traces.extend(local)
+    if cfg.get("we_bins", True):
+        for target in _bin_files(cfg):
+            label = _bin_rel(cfg, target)
+            local: list[str] = []
+            data, hits = _patch_bin(target.read_bytes(), bin_table, local, fix_length)
+            if hits:
+                bin_plan.append((target, data, hits))
+                traces.append(f"  {label}（{hits} 处）")
+                traces.extend(local)
 
     stats = {
         "dict": len(table),
@@ -311,7 +303,7 @@ def apply(cfg: dict, logger, dry_run: bool = False, fix_length: bool = False) ->
 
 def restore_latest(cfg: dict, logger) -> dict:
     """从最近的 we-* 备份逐个回溯还原；同一文件只取最近一份原始副本。"""
-    if app_running(cfg["product_exe"]):
+    if app_running(cfg):
         raise WorkEnvError(f"{cfg['product_exe']} 正在运行，请先完全退出")
     if not paths.BACKUP_ROOT.exists():
         raise WorkEnvError("没有可用的备份")

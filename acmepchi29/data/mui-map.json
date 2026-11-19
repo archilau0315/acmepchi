@@ -12,6 +12,7 @@
   "target_language_dir": "en",
   "mode": "replace",
   "replace_mui": false,
+  "we_bins": false,
   "exclude": ["ACSpecFolders.dll.mui"],
-  "notes": "本项目按「MEP 与 Archicad 构建号不同步」处理（当前 3200 vs 5003），因此 replace_mui=false：只汉化工作环境（菜单、工具面板分组、命令布局缓存），MUI 保持英文；整文件替换跨构建 MUI 会导致程序退出"
+  "notes": "本项目按「MEP 与 Archicad 构建号不同步」处理（当前 3200 vs 5003），因此 replace_mui=false：只汉化工作环境 XML（菜单标题、工具面板名称）。we_bins=false：默认不改用户级 bin，实测改写 Command Layouts 缓存会导致顶栏菜单消失；确认安全后可另行开启"
 }

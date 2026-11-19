@@ -26,14 +26,14 @@ COMMANDS_XML = WORKENV / "Command Layouts" / "Standard Commands.xml"
 LAYOUT_DIR = Path("LimitedWorkEnvironment") / "Command Layouts"
 TERMS_PATH = Path(__file__).resolve().parent / "data" / "mep_terms.json"
 
-# bin 扫描范围（相对用户配置目录 MEP Designer 30*）；这些文件都存放界面文案缓存
+# bin 扫描范围（相对用户配置目录 MEP Designer 30*）；这些文件都存放界面文案缓存。
+# 不包含「最近的工作环境」「Latest WorkEnvironment」：它们是最近一次运行缓存，
+# Profile.xml 按 GUID 引用其中的方案，改写后容易被程序判为无效并重建，
+# 导致「工作环境配置文件数据错误：未找到方案」，故一律不动。
 BIN_DIRS = [
     Path("LimitedWorkEnvironment") / "Command Layouts",
     Path("LimitedWorkEnvironment") / "Tools",
     Path("LimitedWorkEnvironment") / "Workspaces",
-    Path("Latest WorkEnvironment") / "Workspaces",
-    Path("最近的工作环境") / "工具",
-    Path("最近的工作环境") / "工作空间",
 ]
 
 NAME_TAG = re.compile(r"(<Name\b[^>]*>)([^<]*)(</Name>)")
@@ -262,14 +262,15 @@ def apply(cfg: dict, logger, dry_run: bool = False, fix_length: bool = False) ->
 
     bin_plan: list[tuple[Path, bytes, int]] = []
     traces: list[str] = []
-    for target in _bin_files():
-        label = _bin_rel(target)
-        local: list[str] = []
-        data, hits = _patch_bin(target.read_bytes(), bin_table, local, fix_length)
-        if hits:
-            bin_plan.append((target, data, hits))
-            traces.append(f"  {label}（{hits} 处）")
-            traces.extend(local)
+    if cfg.get("we_bins", False):
+        for target in _bin_files():
+            label = _bin_rel(target)
+            local: list[str] = []
+            data, hits = _patch_bin(target.read_bytes(), bin_table, local, fix_length)
+            if hits:
+                bin_plan.append((target, data, hits))
+                traces.append(f"  {label}（{hits} 处）")
+                traces.extend(local)
 
     stats = {
         "dict": len(table),
