@@ -9,9 +9,19 @@
   "source_exe": "Archicad.exe",
   "source_install_dir": "Archicad 30",
   "source_language_dir": "zh-CN",
-  "target_language_dir": "en",
-  "mode": "replace",
+  "target_language_dir": "zh-CN",
+  "mode": "switch",
   "we_bins": false,
-  "exclude": ["ACSpecFolders.dll.mui"],
-  "notes": "mode=replace: 用中文 .mui 覆盖目标 en 目录，保持 uilanguage.dat 不变；mode=switch: 建立 zh-CN 目录并改写 uilanguage.dat。exclude: 永不替换的文件（ACSpecFolders 中文版会导致程序 5 秒内静默退出）。we_bins=false: 不改写用户级 bin（实测改写「最近的工作环境」方案会导致 Profile.xml 引用失效，报「工作环境配置文件数据错误：未找到方案」）"
+  "exclude": [
+    "ACSpecFolders.dll.mui",
+    "ProductResourceProvider.dll.mui",
+    "MEPPluginUI.dll.mui",
+    "MEPAPI.dll.mui",
+    "MEPElements.dll.mui",
+    "MEPLogicCore.dll.mui",
+    "MEPDistSystemsBrowser.dll.mui",
+    "BuiltInPropertiesMEPPlugin.dll.mui",
+    "VBTo2DMEPPlugin.dll.mui"
+  ],
+  "notes": "mode=switch: 建立 zh-CN 目录并改写 uilanguage.dat（MEP 30 实际就按 zh-CN 加载）。exclude 两类：1) ACSpecFolders 中文版会导致程序 5 秒内静默退出；2) MEP 专属 MUI（ProductResourceProvider/MEPPluginUI/MEPAPI/MEPElements/MEPLogicCore/MEPDistSystemsBrowser/BuiltInPropertiesMEPPlugin/VBTo2DMEPPlugin），Archicad 中文包里缺 MEP Designer 的条目（体积小 18%~35%），替换后「设计」菜单会整条消失，必须保留英文原版。we_bins=false: 不改写用户级 bin（改写「最近的工作环境」方案会让 Profile.xml 引用失效，报「工作环境配置文件数据错误：未找到方案」）"
 }
