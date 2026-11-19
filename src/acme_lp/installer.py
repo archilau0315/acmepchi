@@ -3,9 +3,24 @@
 from __future__ import annotations
 
 import shutil
+import subprocess
 from pathlib import Path
 
 from . import backup, paths, verify
+
+
+def _app_running(exe_name: str) -> bool:
+    """目标程序运行时资源文件会被占用，安装前必须先退出。"""
+    try:
+        out = subprocess.run(
+            ["tasklist", "/FI", f"IMAGENAME eq {exe_name}"],
+            capture_output=True,
+            text=True,
+            errors="ignore",
+        ).stdout
+        return exe_name.lower() in out.lower()
+    except OSError:
+        return False
 
 
 class GuardError(RuntimeError):
@@ -37,6 +52,8 @@ def detect(cfg: dict) -> dict:
         src_uilang = paths.read_uilanguage(source)
         if src_uilang != cfg["source_language_dir"]:
             info["errors"].append(f"来源 Archicad 当前语言为 {src_uilang or '未知'}，请先装中文版")
+    if target and _app_running(cfg["product_exe"]):
+        info["errors"].append(f"{cfg['product_exe']} 正在运行，请先完全退出后再安装")
     return info
 
 
@@ -85,6 +102,8 @@ def restore_latest(cfg: dict, logger) -> dict:
     info = detect(cfg)
     if not info["target_dir"]:
         raise GuardError(f"未找到 {cfg['product_install_dir']} 安装目录")
+    if _app_running(cfg["product_exe"]):
+        raise GuardError(f"{cfg['product_exe']} 正在运行，请先完全退出后再还原")
     snapshot = backup.latest_backup()
     if not snapshot:
         raise GuardError("没有可用的备份")
