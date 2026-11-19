@@ -3,4 +3,4 @@ __pycache__/
 *.log
 dist/
 build/
-src/acme_lp/data/mui_dict.json
+**/data/mui_dict.json
