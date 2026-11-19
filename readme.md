@@ -20,7 +20,20 @@ The standalone MEP Designer 30 ships with an English (INT) UI only. This tool po
 |---|---|---|
 | `MEP Designer 30\en\*.mui` | 对话框、控件、提示文本 / dialogs, controls, hints | 用 Archicad 中文版同名文件覆盖 / overwritten by CHI satellites |
 | `Defaults\MEP Designer\WorkEnvironment\*.xml` | 菜单标题、工具面板分组名 / menu titles, palette groups | 词典 + 手工词表原位替换 / in-place replacement |
-| `%APPDATA%\GRAPHISOFT\MEP Designer 30*\LimitedWorkEnvironment\Command Layouts\*.bin` | 用户级工作环境二进制快照 / user-level WE snapshot | UTF-16LE 等长替换 / length-preserving replacement |
+| `%APPDATA%\GRAPHISOFT\MEP Designer 30*\**\*.bin` | 用户级界面文案缓存 / user-level UI text cache | UTF-16LE 等长替换 / length-preserving replacement |
+
+### 覆盖范围 / Coverage
+
+`we` 会扫描用户配置目录下以下位置的 `.bin`（存在即处理，缺失自动跳过）：
+
+| 相对路径 / Relative path | 内容 / Content |
+|---|---|
+| `LimitedWorkEnvironment\Command Layouts\*.bin` | 菜单栏与命令标签 / menu bar & command labels |
+| `LimitedWorkEnvironment\Tools\*.bin` | 工具面板分组名（Ducts/Pipes/Electrical…）/ palette group names |
+| `LimitedWorkEnvironment\Workspaces\*.bin` | 工作空间布局 / workspace layout |
+| `Latest WorkEnvironment\Workspaces\*.bin` | 最近使用的布局 / recent layouts |
+| `最近的工作环境\工具\*.bin` | 工具面板中文目录缓存 / localized palette cache |
+| `最近的工作环境\工作空间\*.bin` | 工作空间中文目录缓存 / localized workspace cache |
 
 > **重要 / Important**：`uilanguage.dat` 始终保持 `en`；`en\ACSpecFolders.dll.mui` 必须保留英文原版，否则程序会在 5 秒内静默退出。
 > `uilanguage.dat` stays `en`; `en\ACSpecFolders.dll.mui` must remain the English original, otherwise the app silently exits within 5 seconds.
@@ -68,6 +81,7 @@ python -m acme_lp.cli install      # 备份 + 安装 MUI，末尾自动执行 we
 python -m acme_lp.cli restore      # 还原 MUI · restore MUI
 python -m acme_lp.cli we --dry-run # 只统计工作环境命中数 · stats only
 python -m acme_lp.cli we           # 汉化工作环境 XML 与 bin · patch WE files
+python -m acme_lp.cli we --fix-length   # 可选：同时把 bin 长度字段改为中文字符数
 python -m acme_lp.cli we-restore   # 还原工作环境 XML 与 bin · restore WE files
 python -m acme_lp.cli backups      # 查看最近备份 · latest backup
 ```
@@ -103,7 +117,7 @@ Both `we` and `we-restore` require MEP Designer to be closed; a running instance
 |---|---|
 | 建词典 / Dictionary | 英文原版 MUI 与 Archicad 中文版同名文件按 `"#id"` 分段，段内 `text/name` 数量相等时按序配对，还原 `\uXXXX`，得到约 9 400 条英文→中文；缓存为 `src/acme_lp/data/mui_dict.json` |
 | XML / XML files | 只替换 `<Name ...>英文</Name>` 与 `title="英文"`，仅当文本为纯 ASCII 且命中词表；`&` 快捷键前缀自动兼容；XML 实体自动转义 |
-| bin / Snapshot | 按英文长度降序在 UTF-16LE 字节流中查找，前后字符非字母数字才替换；译文更短时用 `U+FFFF` 补齐，文件长度不变 |
+| bin / Snapshot | 按英文长度降序在 UTF-16LE 字节流中查找，命中「前后字符非字母数字」或「文本前紧邻 `01 00 + 字符数` 记录头」才替换；译文更短时用 `U+FFFF` 补齐，文件长度不变（默认保留原长度字段，`--fix-length` 改写为中文字符数） |
 | 幂等 / Idempotent | 已是中文的内容不会再命中英文键，重复执行命中数为 0 |
 
 ---

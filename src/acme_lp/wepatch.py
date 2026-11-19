@@ -14,6 +14,7 @@ import os
 import re
 import shutil
 import subprocess
+import ctypes
 from datetime import datetime
 from pathlib import Path
 
@@ -24,6 +25,16 @@ TOOLS_XML = WORKENV / "Tools" / "MEP Engineering Tools.xml"
 COMMANDS_XML = WORKENV / "Command Layouts" / "Standard Commands.xml"
 LAYOUT_DIR = Path("LimitedWorkEnvironment") / "Command Layouts"
 TERMS_PATH = Path(__file__).resolve().parent / "data" / "mep_terms.json"
+
+# bin 扫描范围（相对用户配置目录 MEP Designer 30*）；这些文件都存放界面文案缓存
+BIN_DIRS = [
+    Path("LimitedWorkEnvironment") / "Command Layouts",
+    Path("LimitedWorkEnvironment") / "Tools",
+    Path("LimitedWorkEnvironment") / "Workspaces",
+    Path("Latest WorkEnvironment") / "Workspaces",
+    Path("最近的工作环境") / "工具",
+    Path("最近的工作环境") / "工作空间",
+]
 
 NAME_TAG = re.compile(r"(<Name\b[^>]*>)([^<]*)(</Name>)")
 TITLE_ATTR = re.compile(r'(\btitle=")([^"]*)(")')
@@ -47,6 +58,27 @@ def app_running(exe_name: str) -> bool:
         return exe_name.lower() in out.lower()
     except OSError:
         return False
+
+
+def set_readonly(path: Path, readonly: bool) -> None:
+    """设置/清除只读属性。
+
+    Windows 下 os.chmod 偶发不生效（尤其是刚被程序关闭的文件），
+    这里直接改文件属性，写完后再按原状态恢复。
+    """
+    try:
+        kernel32 = ctypes.windll.kernel32
+    except AttributeError:  # 非 Windows 平台
+        path.chmod(0o444 if readonly else 0o666)
+        return
+    attrs = kernel32.GetFileAttributesW(str(path))
+    if attrs == -1:
+        raise OSError(0, "读取文件属性失败", str(path))
+    new = (attrs | 0x01) if readonly else (attrs & ~0x01)
+    if not kernel32.SetFileAttributesW(str(path), new):
+        raise OSError(0, "设置文件属性失败", str(path))
+    if bool(path.stat().st_mode & 0o200) == readonly:
+        raise OSError(0, "文件仍不可写", str(path))
 
 
 def _xml_unescape(text: str) -> str:
@@ -98,8 +130,29 @@ def _patch_xml(path: Path, pattern: re.Pattern, tables: tuple[dict[str, str], ..
     return pattern.sub(repl, raw), hits
 
 
-def _patch_bin(data: bytes, table: dict[str, str]) -> tuple[bytes, int]:
-    """按英文长度降序在 UTF-16LE 字节里替换，长度不足处用 U+FFFF 补齐。"""
+def _context(data: bytes, index: int, length: int, chars: int = 20) -> tuple[str, str]:
+    """取命中位置前/后各 chars 个 UTF-16 字符，便于人工判断是否误替换。"""
+    left = index - chars * 2
+    left = left if left % 2 == 0 else left + 1
+    right = index + length
+    return (
+        data[max(0, left):index].decode("utf-16-le", "replace"),
+        data[right:right + chars * 2].decode("utf-16-le", "replace"),
+    )
+
+
+def _patch_bin(
+    data: bytes,
+    table: dict[str, str],
+    trace: list[str] | None = None,
+    fix_length: bool = False,
+) -> tuple[bytes, int]:
+    """按英文长度降序在 UTF-16LE 字节里替换。
+
+    记录格式为「控制字节 + 长度字段(uint32 LE, 字符数) + UTF-16 文本」。
+    译文更短时用 U+FFFF 补齐原字节长度；fix_length=True 时同时把长度字段
+    改为中文字符数（两种写法都不改变文件总长度）。
+    """
     count = 0
     for en, zh in sorted(table.items(), key=lambda kv: -len(kv[0])):
         if not zh:
@@ -115,25 +168,49 @@ def _patch_bin(data: bytes, table: dict[str, str]) -> tuple[bytes, int]:
             end = index + len(pattern)
             prev = data[index - 2:index].decode("utf-16-le", "ignore") if index >= 2 else ""
             nxt = data[end:end + 2].decode("utf-16-le", "ignore") if end + 2 <= len(data) else ""
-            if not prev.isalnum() and not nxt.isalnum():
+            # 整条记录：文本前紧邻「01 00 + 字符数(uint32)」，此时必定是完整标签
+            header = b"\x01\x00" + len(en).to_bytes(4, "little")
+            whole = data[index - 6:index] == header if index >= 6 else False
+            if whole or (not prev.isalnum() and not nxt.isalnum()):
+                if trace is not None:
+                    left, right = _context(data, index, len(pattern))
+                    trace.append(f"    @{index} {left!r} [{en} -> {zh}] {right!r}")
                 padding = FILL * ((len(pattern) - len(new)) // 2)
                 data = data[:index] + new + padding + data[end:]
+                if fix_length and index >= 4:
+                    data = data[:index - 4] + len(zh).to_bytes(4, "little") + data[index:]
                 count += 1
             start = index + max(len(new), 2)
     return data, count
 
 
-def _bin_files() -> list[Path]:
-    """用户级命令布局 bin（各版本目录下的 Command Layouts/*.bin）。"""
+def _version_roots() -> list[Path]:
+    """用户配置目录下的各版本根（%APPDATA%\\GRAPHISOFT\\MEP Designer 30*）。"""
     base = Path(os.environ.get("APPDATA", str(Path.home()))) / "GRAPHISOFT"
     if not base.is_dir():
         return []
+    return [d for d in sorted(base.iterdir()) if d.is_dir() and d.name.lower().startswith("mep designer 30")]
+
+
+def _bin_files() -> list[Path]:
+    """所有含界面文案的用户级 bin（工具面板、命令布局、工作空间等）。"""
     files: list[Path] = []
-    for folder in sorted(base.iterdir()):
-        layout = folder / LAYOUT_DIR
-        if folder.is_dir() and folder.name.lower().startswith("mep designer 30") and layout.is_dir():
-            files.extend(sorted(layout.glob("*.bin")))
+    for root in _version_roots():
+        for rel in BIN_DIRS:
+            folder = root / rel
+            if folder.is_dir():
+                files.extend(sorted(p for p in folder.glob("*.bin") if p.is_file()))
     return files
+
+
+def _bin_rel(target: Path) -> str:
+    """相对版本根目录的路径，用作备份子路径和统计键。"""
+    for root in _version_roots():
+        try:
+            return target.relative_to(root).as_posix()
+        except ValueError:
+            continue
+    return target.name
 
 
 def _new_backup_dir() -> Path:
@@ -160,8 +237,8 @@ def _write_manifest(backup: Path, entries: list[dict]) -> None:
     (backup / "manifest.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), "utf-8")
 
 
-def apply(cfg: dict, logger, dry_run: bool = False) -> dict:
-    """汉化工作环境 XML 与命令布局 bin；默认幂等，可重复执行。"""
+def apply(cfg: dict, logger, dry_run: bool = False, fix_length: bool = False) -> dict:
+    """汉化工作环境 XML 与用户级 bin；默认幂等，可重复执行。"""
     if not dry_run and app_running(cfg["product_exe"]):
         raise WorkEnvError(f"{cfg['product_exe']} 正在运行，请先完全退出")
     mep_dir = paths.find_product_dir(cfg, "target")
@@ -184,18 +261,25 @@ def apply(cfg: dict, logger, dry_run: bool = False) -> dict:
             xml_plan.append((target, text, hits))
 
     bin_plan: list[tuple[Path, bytes, int]] = []
+    traces: list[str] = []
     for target in _bin_files():
-        data, hits = _patch_bin(target.read_bytes(), bin_table)
+        label = _bin_rel(target)
+        local: list[str] = []
+        data, hits = _patch_bin(target.read_bytes(), bin_table, local, fix_length)
         if hits:
             bin_plan.append((target, data, hits))
+            traces.append(f"  {label}（{hits} 处）")
+            traces.extend(local)
 
     stats = {
         "dict": len(table),
         "terms": len(terms),
         "xml": {p.name: h for p, _, h in xml_plan},
         "xml_total": sum(h for _, _, h in xml_plan),
-        "bins": {p.name: h for p, _, h in bin_plan},
+        "bins": {_bin_rel(p): h for p, _, h in bin_plan},
         "bin_total": sum(h for _, _, h in bin_plan),
+        "traces": traces,
+        "strategy": "length-fixed" if not fix_length else "length-updated",
         "backup": "",
     }
     if dry_run or not (xml_plan or bin_plan):
@@ -205,12 +289,14 @@ def apply(cfg: dict, logger, dry_run: bool = False) -> dict:
     entries: list[dict] = []
     for target, text, _ in xml_plan:
         _save(snapshot, target, f"install/{target.relative_to(mep_dir).as_posix()}", entries)
-        target.chmod(0o666)
+        set_readonly(target, False)
         target.write_text(text, encoding="utf-8", errors="surrogateescape", newline="")
     for target, data, _ in bin_plan:
-        _save(snapshot, target, f"bin/{target.name}", entries)
-        target.chmod(0o666)
+        readonly = (target.stat().st_mode & 0o200) == 0
+        _save(snapshot, target, f"bin/{_bin_rel(target)}", entries)
+        set_readonly(target, False)
         target.write_bytes(data)
+        set_readonly(target, readonly)
     _write_manifest(snapshot, entries)
 
     logger.info("工作环境汉化：XML %d 处，bin %d 处", stats["xml_total"], stats["bin_total"])
@@ -240,9 +326,9 @@ def restore_latest(cfg: dict, logger) -> dict:
             if str(target).lower() in done or not source.exists():
                 continue
             done.add(str(target).lower())
-            target.chmod(0o666)
+            set_readonly(target, False)
             shutil.copyfile(source, target)
-            target.chmod(0o444 if entry.get("readonly") else 0o666)
+            set_readonly(target, bool(entry.get("readonly")))
             count += 1
     logger.info("已还原工作环境文件 %d 个（回溯 %d 份备份）", count, len(folders))
     return {"restored": count, "backup": str(folders[0]), "scanned": len(folders)}

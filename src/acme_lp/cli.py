@@ -19,6 +19,7 @@ def main() -> int:
     parser.add_argument("command", choices=["status", "preview", "install", "restore", "backups", "menu", "menu-restore", "we", "we-restore"])
     parser.add_argument("--mode", choices=["replace", "switch"], default=None, help="replace=覆盖 en 目录；switch=新建 zh-CN 并切换语言")
     parser.add_argument("--dry-run", action="store_true", help="只统计，不写入")
+    parser.add_argument("--fix-length", action="store_true", help="bin 替换时同时把长度字段改为中文字符数（默认保持原长度）")
     args = parser.parse_args()
 
     cfg = paths.load_config()
@@ -63,10 +64,16 @@ def main() -> int:
         return 0
 
     if args.command == "we":
-        result = wepatch.apply(cfg, logger, dry_run=args.dry_run)
-        print(f"词表：手工 {result['terms']} 条，MUI 词典 {result['dict']} 条")
+        result = wepatch.apply(cfg, logger, dry_run=args.dry_run, fix_length=args.fix_length)
+        print(f"词表：手工 {result['terms']} 条，MUI 词典 {result['dict']} 条，长度策略 {result['strategy']}")
         print(f"XML 命中 {result['xml_total']} 处：{result['xml'] or '无'}")
-        print(f"bin 命中 {result['bin_total']} 处：{result['bins'] or '无'}")
+        print(f"bin 命中 {result['bin_total']} 处，涉及 {len(result['bins'])} 个文件")
+        for name, hits in result["bins"].items():
+            print(f"  {name}: {hits}")
+        if result["traces"]:
+            print("命中上下文（前/后各 20 字符）：")
+            for line in result["traces"]:
+                print(line)
         if result["backup"]:
             print(f"备份：{result['backup']}")
         elif args.dry_run:
