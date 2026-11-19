@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import argparse
 
-from . import backup, installer, paths, we_i18n
+from . import backup, installer, paths, we_i18n, wepatch
 
 
 def _print_detect(info: dict) -> None:
@@ -16,7 +16,7 @@ def _print_detect(info: dict) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(prog="acmepchi", description="MEP Designer 30 中文资源移植工具")
-    parser.add_argument("command", choices=["status", "preview", "install", "restore", "backups", "menu", "menu-restore"])
+    parser.add_argument("command", choices=["status", "preview", "install", "restore", "backups", "menu", "menu-restore", "we", "we-restore"])
     parser.add_argument("--mode", choices=["replace", "switch"], default=None, help="replace=覆盖 en 目录；switch=新建 zh-CN 并切换语言")
     parser.add_argument("--dry-run", action="store_true", help="只统计，不写入")
     args = parser.parse_args()
@@ -60,6 +60,22 @@ def main() -> int:
     if args.command == "menu-restore":
         result = we_i18n.restore_latest(cfg, logger)
         print(f"已还原 {result['restored']} 个菜单文件（{result['backup']}）")
+        return 0
+
+    if args.command == "we":
+        result = wepatch.apply(cfg, logger, dry_run=args.dry_run)
+        print(f"词表：手工 {result['terms']} 条，MUI 词典 {result['dict']} 条")
+        print(f"XML 命中 {result['xml_total']} 处：{result['xml'] or '无'}")
+        print(f"bin 命中 {result['bin_total']} 处：{result['bins'] or '无'}")
+        if result["backup"]:
+            print(f"备份：{result['backup']}")
+        elif args.dry_run:
+            print("（dry-run：未写入任何文件）")
+        return 0
+
+    if args.command == "we-restore":
+        result = wepatch.restore_latest(cfg, logger)
+        print(f"已还原工作环境文件 {result['restored']} 个（回溯 {result['scanned']} 份备份）")
         return 0
 
     if args.command == "restore":

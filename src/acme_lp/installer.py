@@ -6,7 +6,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from . import backup, paths, verify
+from . import backup, paths, verify, wepatch
 
 
 def _app_running(exe_name: str) -> bool:
@@ -95,7 +95,20 @@ def install(cfg: dict, logger, mode: str | None = None) -> dict:
 
     while_after = verify.build_plan(source_dir, target_dir)
     logger.info("安装完成：复制 %d 个，剩余差异 %d 个", len(copied), len(while_after["to_copy"]))
-    return {"backup": str(snapshot), "copied": copied, "remaining": while_after["to_copy"], "mode": mode}
+
+    # 资源就位后同步汉化工作环境（菜单标题、工具面板分组名、命令布局 bin）
+    try:
+        workenv = wepatch.apply(cfg, logger)
+    except (OSError, wepatch.WorkEnvError) as exc:
+        logger.warning("工作环境汉化失败：%s", exc)
+        workenv = {"error": str(exc)}
+    return {
+        "backup": str(snapshot),
+        "copied": copied,
+        "remaining": while_after["to_copy"],
+        "mode": mode,
+        "workenv": workenv,
+    }
 
 
 def restore_latest(cfg: dict, logger) -> dict:
