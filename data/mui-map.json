@@ -1,0 +1,15 @@
+{
+  "product": "MEP Designer 30",
+  "product_reg_root": "MEP Designer",
+  "product_exe": "MEP Designer.exe",
+  "product_install_dir": "MEP Designer 30",
+  "target_build": "3001",
+  "source_product": "Archicad 30",
+  "source_reg_root": "Archicad",
+  "source_exe": "Archicad.exe",
+  "source_install_dir": "Archicad 30",
+  "source_language_dir": "zh-CN",
+  "target_language_dir": "en",
+  "mode": "replace",
+  "notes": "mode=replace: 用中文 .mui 覆盖目标 en 目录，保持 uilanguage.dat 不变；mode=switch: 建立 zh-CN 目录并改写 uilanguage.dat"
+}
