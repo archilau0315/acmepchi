@@ -27,13 +27,18 @@ class MappingTest(unittest.TestCase):
         self.assertLessEqual(len(only_source), 0, f"中文侧多出文件：{sorted(only_source)[:5]}")
 
     def test_version_guard(self) -> None:
-        """构建号不一致时必须被 detect 拦下，不能放行安装。"""
+        """本项目按构建号不同步处理：工作环境模式放行，整文件替换模式必须拦截。"""
         info = installer.detect(self.cfg)
         if not (info["target_version"] and info["source_version"]):
             self.skipTest("未同时安装 MEP Designer 29 与 Archicad 29")
         mismatch = info["target_version"] != info["source_version"]
         blocked = any("构建号不一致" in item for item in info["errors"])
-        self.assertEqual(mismatch, blocked)
+        if self.cfg.get("replace_mui", True):
+            self.assertEqual(mismatch, blocked)
+        else:
+            self.assertFalse(blocked)
+            forced = installer.detect({**self.cfg, "replace_mui": True})
+            self.assertEqual(mismatch, any("构建号不一致" in item for item in forced["errors"]))
 
 
 if __name__ == "__main__":

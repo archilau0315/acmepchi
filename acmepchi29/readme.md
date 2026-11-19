@@ -9,23 +9,31 @@
 ## 1. 当前状态 / Status
 
 **中文**
-代码已完成，可检测环境、移植 MUI、汉化工作环境（菜单栏、工具面板分组、命令布局缓存）、一键备份与还原。
-
-但本机环境暂不具备验证条件：
+本项目按「**MEP Designer 与 Archicad 构建号不同步**」处理，因此汉化只在工作环境层面进行：
 
 | 项目 | 版本 |
 |---|---|
-| MEP Designer 29 R1 INT | 29.0.0.**3000** |
-| Archicad 29 R1 CHI | 29.0.0.**5003** |
+| MEP Designer 29 | 29.0.0.**3200** |
+| Archicad 29（中文资源来源） | 29.0.0.**5003** |
 
-两者构建号不同，MUI 资源结构对不上，替换后 MEP Designer 会静默退出（实测：整批替换启动即退；仅换 3 个 MEP 文件可启动但十几秒后退出）。因此工具内置**构建号一致性校验**：不一致时直接拦截，不做任何写入。
+已实测完成：
+- 菜单标题 95 处、用户级界面缓存 3520 处汉化（菜单栏、左侧工具面板分组、命令布局）
+- 程序启动稳定，可长时间驻留，无崩溃报告
+- 一键备份与还原可用
 
-**下一步**：把 MEP Designer 29 更新到与 Archicad 29 相同的构建（29.2 / 5003），再执行 `check` 应无报错，即可安装验证并打包 exe。
+**不做**：MUI 资源整文件替换。跨构建替换已实测会导致程序在 15 秒内退出，因此对话框等文案保持英文。
 
 **English**
-Code is complete: environment check, MUI porting, work-environment localisation (menus, palette groups, command-layout cache), backup and rollback.
+This project assumes **MEP Designer and Archicad build numbers are never in sync**, so localisation stays at the work-environment layer:
 
-The local pair is **29.0.0.3000** (MEP Designer 29) vs **29.0.0.5003** (Archicad 29 CHI). Different builds mean incompatible MUI resources; replacing them makes MEP Designer exit silently. The tool therefore **blocks installation when build numbers differ**. Update MEP Designer 29 to the same build (29.2 / 5003), re-check, then verify and build the exe.
+| Item | Version |
+|---|---|
+| MEP Designer 29 | 29.0.0.**3200** |
+| Archicad 29 (CHI resource source) | 29.0.0.**5003** |
+
+Verified: 95 XML menu titles and 3520 user-level UI cache entries localised (menu bar, tool palette groups, command layouts); the app stays stable with no crash report; backup/rollback work.
+
+Not done: whole-file MUI replacement — cross-build replacement was measured to close the app within 15 seconds, so dialogs remain English.
 
 ---
 
@@ -77,6 +85,8 @@ python -m acme_lp.cli we --dry-run  # 只统计命中，不写文件
 
 或双击 `bin\acmepchi.bat` 使用图形界面。操作前请完全退出 MEP Designer；每次写入自动备份到 `%LOCALAPPDATA%\ACMEPCHI\backup\`。
 
+当前 `replace_mui=false`：`install` 等同于只做工作环境汉化，不会覆盖任何 MUI 文件。
+
 ---
 
 ## 5. 打包 exe / Building the exe
@@ -88,7 +98,7 @@ python -m PyInstaller --noconfirm --clean --onefile --windowed --uac-admin `
   bin/exe_entry.py
 ```
 
-产物为 `dist\ACMEPCHI-29.exe`。**构建号统一并验证通过后**再执行此命令对外发布。
+产物为 `dist\ACMEPCHI-29.exe`（单文件、无控制台、请求管理员权限）。
 
 ---
 

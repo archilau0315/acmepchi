@@ -286,6 +286,7 @@ def apply(cfg: dict, logger, dry_run: bool = False, fix_length: bool = False) ->
         "strategy": "length-fixed" if not fix_length else "length-updated",
         "backup": "",
     }
+    stats["summary"] = f"XML {stats['xml_total']} 处，bin {stats['bin_total']} 处"
     if dry_run or not (xml_plan or bin_plan):
         return stats
 

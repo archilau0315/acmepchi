@@ -92,19 +92,19 @@ def _non_ascii_ratio(directory: Path) -> float:
 
 
 def _english_dir(cfg: dict) -> Path:
-    """英文原版资源目录：优先历史备份里的 en，其次目标安装目录的 en。"""
+    """英文原版资源目录：优先当前安装的 en（仍是英文时），其次历史备份。"""
     candidates: list[Path] = []
+    target = paths.find_product_dir(cfg, "target")
+    if target and (target / cfg["target_language_dir"]).is_dir():
+        candidates.append(target / cfg["target_language_dir"])
     root = paths.BACKUP_ROOT
     if root.exists():
         for item in sorted(root.iterdir(), reverse=True):
             folder = item / "en"
             if folder.is_dir() and any(folder.glob("*.mui")):
                 candidates.append(folder)
-    target = paths.find_product_dir(cfg, "target")
-    if target and (target / cfg["target_language_dir"]).is_dir():
-        candidates.append(target / cfg["target_language_dir"])
     if not candidates:
-        raise RuntimeError("未找到英文原版 MUI（既无备份也无安装目录）")
+        raise RuntimeError("未找到英文原版 MUI（既无安装目录也无备份）")
     english = [d for d in candidates if _non_ascii_ratio(d) < 0.05]
     if not english:
         raise RuntimeError("备份中的 en 目录已是中文，找不到英文原版；请先还原英文再重建词典")

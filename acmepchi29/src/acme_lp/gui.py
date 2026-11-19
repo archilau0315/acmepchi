@@ -60,13 +60,17 @@ class App:
             for err in info["errors"]:
                 self.write(f"[!] {err}")
             return
+        if not self.cfg.get("replace_mui", True):
+            self.write("[模式] 仅汉化工作环境：菜单、工具面板分组、命令布局（MUI 资源保持英文）")
+            return
         plan = installer.preview(self.cfg)["plan"]
         self.write(f"[OK] 待复制 {len(plan['to_copy'])} 个，已相同 {len(plan['identical'])} 个")
         for name in plan["missing_in_source"][:5]:
             self.write(f"[提示] MEP 侧有、中文侧无：{name}")
 
     def on_install(self) -> None:
-        if not messagebox.askokcancel("确认", "将先自动备份，再覆盖目标语言资源。继续？"):
+        prompt = "将先自动备份，再汉化工作环境（菜单与工具面板分组）。继续？" if not self.cfg.get("replace_mui", True) else "将先自动备份，再覆盖目标语言资源。继续？"
+        if not messagebox.askokcancel("确认", prompt):
             return
         try:
             result = installer.install(self.cfg, self.logger)
@@ -77,6 +81,11 @@ class App:
             messagebox.showerror("无法安装", f"文件读写失败（请确认以管理员身份运行）：\n{exc}")
             return
         self.write("—— 安装完成 ——")
+        if result.get("mode") == "workenv":
+            info = result.get("workenv", {})
+            self.write(f"工作环境：{info.get('summary', '已处理')}")
+            self.write("界面菜单与工具面板分组已汉化；对话框等 MUI 文案保持英文（构建不同步）。")
+            return
         self.write(f"备份：{result['backup']}")
         self.write(f"复制：{len(result['copied'])} 个，剩余差异：{len(result['remaining'])} 个")
         self.write("请启动 MEP Designer 29（演示模式亦可）确认界面语言。")

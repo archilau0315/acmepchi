@@ -11,6 +11,7 @@
   "source_language_dir": "zh-CN",
   "target_language_dir": "en",
   "mode": "replace",
+  "replace_mui": false,
   "exclude": ["ACSpecFolders.dll.mui"],
-  "notes": "mode=replace: 用中文 .mui 覆盖目标 en 目录，保持 uilanguage.dat 不变；mode=switch: 建立 zh-CN 目录并改写 uilanguage.dat。exclude: 永不替换的文件（ACSpecFolders 中文版会导致程序 5 秒内静默退出）"
+  "notes": "本项目按「MEP 与 Archicad 构建号不同步」处理（当前 3200 vs 5003），因此 replace_mui=false：只汉化工作环境（菜单、工具面板分组、命令布局缓存），MUI 保持英文；整文件替换跨构建 MUI 会导致程序退出"
 }
