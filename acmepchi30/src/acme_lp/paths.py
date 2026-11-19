@@ -14,10 +14,14 @@ LOCAL_DIR = Path(os.environ.get("LOCALAPPDATA", Path.home())) / APP_NAME
 LOG_DIR = LOCAL_DIR / "logs"
 BACKUP_ROOT = LOCAL_DIR / "backup"
 _HERE = Path(__file__).resolve()
-PACKAGE_ROOT = next(
-    (base for base in (_HERE.parents[2], _HERE.parents[1]) if (base / "data" / "mui-map.json").exists()),
-    _HERE.parents[2],
-)
+if getattr(sys, "frozen", False):
+    # PyInstaller 打包后资源解压在 _MEIPASS，源码目录不再存在
+    PACKAGE_ROOT = Path(getattr(sys, "_MEIPASS", Path(sys.executable).parent))
+else:
+    PACKAGE_ROOT = next(
+        (base for base in (_HERE.parents[2], _HERE.parents[1]) if (base / "data" / "mui-map.json").exists()),
+        _HERE.parents[2],
+    )
 CONFIG_PATH = PACKAGE_ROOT / "data" / "mui-map.json"
 
 PROGRAM_FILES = [Path(os.environ.get("ProgramFiles", r"C:\Program Files")), Path(os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)"))]
@@ -37,10 +41,11 @@ def get_logger(name: str = "acmepchi") -> logging.Logger:
     fmt = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s", "%Y-%m-%d %H:%M:%S")
     fh = logging.FileHandler(LOG_DIR / "acmepchi.log", encoding="utf-8")
     fh.setFormatter(fmt)
-    sh = logging.StreamHandler(sys.stdout)
-    sh.setFormatter(fmt)
     logger.addHandler(fh)
-    logger.addHandler(sh)
+    if sys.stderr is not None:  # 打包成无控制台 exe 时没有 stderr
+        sh = logging.StreamHandler(sys.stderr)
+        sh.setFormatter(fmt)
+        logger.addHandler(sh)
     return logger
 
 

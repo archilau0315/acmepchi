@@ -73,6 +73,9 @@ class App:
         except installer.GuardError as exc:
             messagebox.showerror("无法安装", str(exc))
             return
+        except OSError as exc:
+            messagebox.showerror("无法安装", f"文件读写失败（请确认以管理员身份运行）：\n{exc}")
+            return
         self.write("—— 安装完成 ——")
         self.write(f"备份：{result['backup']}")
         self.write(f"复制：{len(result['copied'])} 个，剩余差异：{len(result['remaining'])} 个")
@@ -83,6 +86,9 @@ class App:
             result = installer.restore_latest(self.cfg, self.logger)
         except installer.GuardError as exc:
             messagebox.showerror("无法还原", str(exc))
+            return
+        except OSError as exc:
+            messagebox.showerror("无法还原", f"文件读写失败（请确认以管理员身份运行）：\n{exc}")
             return
         self.write("—— 已还原 ——")
         self.write(f"来源备份：{result['backup']}，还原 {result['restored']} 个文件")

@@ -3,4 +3,5 @@ __pycache__/
 *.log
 dist/
 build/
+*.spec
 **/data/mui_dict.json

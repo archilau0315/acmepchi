@@ -9,12 +9,15 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 from datetime import datetime
 from pathlib import Path
 
 from . import paths
 
-CACHE_PATH = Path(__file__).resolve().parent / "data" / "mui_dict.json"
+# 打包后包内目录是只读临时解压目录，缓存改写到用户目录，便于跨次复用
+BUNDLED_PATH = Path(__file__).resolve().parent / "data" / "mui_dict.json"
+CACHE_PATH = paths.LOCAL_DIR / "mui_dict.json" if getattr(sys, "frozen", False) else BUNDLED_PATH
 
 SEG = re.compile(r'"#id": "?(\d+)"?')
 TXT = re.compile(r'"(?:text|name)": "((?:[^"\\]|\\.){2,80})"')
@@ -102,12 +105,18 @@ def _build(cfg: dict) -> dict[str, str]:
     return table
 
 
+def _read(path: Path) -> dict[str, str]:
+    data = json.loads(path.read_text("utf-8"))
+    items = data.get("items", data)
+    return {k: v for k, v in items.items() if isinstance(v, str)}
+
+
 def load(cfg: dict | None = None, refresh: bool = False) -> dict[str, str]:
-    """读取词典缓存；缓存缺失或要求刷新时重建。"""
-    if CACHE_PATH.exists() and not refresh:
-        data = json.loads(CACHE_PATH.read_text("utf-8"))
-        items = data.get("items", data)
-        return {k: v for k, v in items.items() if isinstance(v, str)}
+    """读取词典缓存；优先用户缓存，其次包内预置，最后现场重建。"""
+    if not refresh:
+        for path in dict.fromkeys((CACHE_PATH, BUNDLED_PATH)):
+            if path.exists():
+                return _read(path)
     cfg = cfg or paths.load_config()
     table = _build(cfg)
     CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)

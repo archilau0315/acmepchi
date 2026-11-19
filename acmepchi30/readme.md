@@ -60,6 +60,8 @@ acmepchi/
 │  └─ gui.py                      图形界面 · GUI
 ├─ tests/test_mapping.py          离线自检 · offline self-check
 ├─ bin/acmepchi.bat               双击启动 · double-click launcher
+├─ bin/exe_entry.py               exe 打包入口 · PyInstaller entry
+├─ dist/ACMEPCHI-30.exe           打包产物（不入库）· built exe (untracked)
 └─ debug_log_1.md                 变更记录 · changelog
 ```
 
@@ -75,7 +77,7 @@ Double-click `bin\acmepchi.bat`, then **检查环境 → 安装中文**; use **�
 ### 命令行 / CLI
 
 ```powershell
-$env:PYTHONPATH = "e:\works\Aidev\AddOn\acmepchi\src"
+$env:PYTHONPATH = "e:\works\Aidev\AddOn\acmepchi\acmepchi30\src"
 python -m acme_lp.cli status       # 检查环境 · environment check
 python -m acme_lp.cli preview      # 预览将覆盖的文件 · preview
 python -m acme_lp.cli install      # 备份 + 安装 MUI，末尾自动执行 we · install (+ we)
@@ -143,6 +145,38 @@ Both `we` and `we-restore` require MEP Designer to be closed; a running instance
 
 ---
 
-## 7. 变更记录 / Changelog
+## 7. 分发给最终用户 / End-user install
+
+**中文**
+1. 前提：本机已安装 **MEP Designer 30**，且装有**同构建的 Archicad 30 中文版**（中文资源来源）。
+2. 完全退出 MEP Designer。
+3. 双击 `dist\ACMEPCHI-30.exe`，在 UAC 提示中选「是」（写入 Program Files 需要管理员权限）。
+4. 依次点 **检查环境 → 安装中文**，看到「安装完成」后重新启动 MEP Designer。
+5. 想恢复英文点 **还原英文**；备份在 `%LOCALAPPDATA%\ACMEPCHI\backup`。
+
+**English**
+1. Prerequisite: **MEP Designer 30** plus a **same-build Archicad 30 (CHI)** installed on the machine.
+2. Quit MEP Designer completely.
+3. Double-click `dist\ACMEPCHI-30.exe` and confirm the UAC prompt (admin rights are needed for Program Files).
+4. Click **检查环境 → 安装中文**, then restart MEP Designer.
+5. Use **还原英文** to roll back; backups live in `%LOCALAPPDATA%\ACMEPCHI\backup`.
+
+> exe 只适用于 MEP Designer 30；29 版需另建工具。 / The exe targets MEP Designer 30 only.
+
+## 8. 打包 exe / Building the exe
+
+```powershell
+python -m PyInstaller --noconfirm --clean --onefile --windowed --uac-admin `
+  --name ACMEPCHI-30 --paths src `
+  --add-data "data;data" --add-data "src/acme_lp/data;acme_lp/data" `
+  bin/exe_entry.py
+```
+
+产物在 `dist\ACMEPCHI-30.exe`（约 11 MB，单文件，内嵌 tkinter 与词典缓存）。
+Output: `dist\ACMEPCHI-30.exe` (~11 MB, single file, bundles tkinter and the dictionary cache).
+
+---
+
+## 9. 变更记录 / Changelog
 
 见 `debug_log_1.md`。
