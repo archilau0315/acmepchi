@@ -61,7 +61,10 @@ def preview(cfg: dict) -> dict:
     info = detect(cfg)
     if info["errors"]:
         return {"info": info, "plan": None}
-    return {"info": info, "plan": verify.build_plan(info["source_language_dir"], info["target_language_dir"])}
+    return {
+        "info": info,
+        "plan": verify.build_plan(info["source_language_dir"], info["target_language_dir"], cfg.get("exclude", [])),
+    }
 
 
 def install(cfg: dict, logger, mode: str | None = None) -> dict:
@@ -70,20 +73,22 @@ def install(cfg: dict, logger, mode: str | None = None) -> dict:
         raise GuardError("；".join(info["errors"]))
 
     mode = mode or cfg.get("mode", "replace")
+    exclude = cfg.get("exclude", [])
     source_dir: Path = info["source_language_dir"]
     target_dir: Path = info["target_language_dir"]
-    plan = verify.build_plan(source_dir, target_dir)
+    plan = verify.build_plan(source_dir, target_dir, exclude)
     logger.info("来源 %s -> 目标 %s，待复制 %d 个", source_dir, target_dir, len(plan["to_copy"]))
 
     snapshot = backup.create_backup(target_dir, Path(info["target_dir"]) / "uilanguage.dat")
     logger.info("已备份到 %s", snapshot)
 
     if mode == "switch":
+        skip = {name.lower() for name in exclude}
         target_dir = info["target_dir"] / cfg["source_language_dir"]
         target_dir.mkdir(parents=True, exist_ok=True)
         copied = []
         for item in sorted(source_dir.iterdir()):
-            if item.is_file():
+            if item.is_file() and item.name.lower() not in skip:
                 shutil.copy2(item, target_dir / item.name)
                 copied.append(item.name)
         paths.write_uilanguage(info["target_dir"], cfg["source_language_dir"])
@@ -93,7 +98,7 @@ def install(cfg: dict, logger, mode: str | None = None) -> dict:
             shutil.copy2(source_dir / name, target_dir / name)
             copied.append(name)
 
-    while_after = verify.build_plan(source_dir, target_dir)
+    while_after = verify.build_plan(source_dir, target_dir, exclude)
     logger.info("安装完成：复制 %d 个，剩余差异 %d 个", len(copied), len(while_after["to_copy"]))
 
     # 资源就位后同步汉化工作环境（菜单标题、工具面板分组名、命令布局 bin）

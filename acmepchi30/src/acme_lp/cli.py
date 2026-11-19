@@ -31,6 +31,8 @@ def main() -> int:
         plan = installer.preview(cfg)["plan"]
         if plan:
             print(f"待复制 {len(plan['to_copy'])} 个，已相同 {len(plan['identical'])} 个，源缺失 {len(plan['missing_in_source'])} 个")
+            if plan["excluded"]:
+                print(f"排除不替换 {len(plan['excluded'])} 个：{', '.join(plan['excluded'])}")
         return 0
 
     if args.command == "preview":
@@ -43,6 +45,8 @@ def main() -> int:
                 print(f"  - {name}")
             if len(plan["to_copy"]) > 10:
                 print(f"  ... 共 {len(plan['to_copy'])} 个")
+        if plan["excluded"]:
+            print(f"排除不替换：{', '.join(plan['excluded'])}")
         return 0
 
     if args.command == "install":

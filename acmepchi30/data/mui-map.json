@@ -11,5 +11,6 @@
   "source_language_dir": "zh-CN",
   "target_language_dir": "en",
   "mode": "replace",
-  "notes": "mode=replace: 用中文 .mui 覆盖目标 en 目录，保持 uilanguage.dat 不变；mode=switch: 建立 zh-CN 目录并改写 uilanguage.dat"
+  "exclude": ["ACSpecFolders.dll.mui"],
+  "notes": "mode=replace: 用中文 .mui 覆盖目标 en 目录，保持 uilanguage.dat 不变；mode=switch: 建立 zh-CN 目录并改写 uilanguage.dat。exclude: 永不替换的文件（ACSpecFolders 中文版会导致程序 5 秒内静默退出）"
 }

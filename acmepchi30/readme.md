@@ -37,6 +37,7 @@ The standalone MEP Designer 30 ships with an English (INT) UI only. This tool po
 
 > **重要 / Important**：`uilanguage.dat` 始终保持 `en`；`en\ACSpecFolders.dll.mui` 必须保留英文原版，否则程序会在 5 秒内静默退出。
 > `uilanguage.dat` stays `en`; `en\ACSpecFolders.dll.mui` must remain the English original, otherwise the app silently exits within 5 seconds.
+> 该文件已列入 `data\mui-map.json` 的 `exclude` 名单，`install` 会自动跳过。/ This file is listed in `exclude` in `data\mui-map.json` and is skipped automatically.
 
 ---
 
