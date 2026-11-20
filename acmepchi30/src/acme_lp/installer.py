@@ -108,11 +108,11 @@ def install(cfg: dict, logger, mode: str | None = None) -> dict:
         logger.warning("工作环境汉化失败：%s", exc)
         workenv = {"error": str(exc)}
 
-    # 再把 MEP 工具名写进 MUI 字符串表（en 与 zh-CN 两份都改，防语言回退）
+    # 再把 MEP 的界面文本（工具名、对话框、提示）写进 MUI（en 与 zh-CN 两份都改，防语言回退）
     try:
         muitext_stats = muitext.apply(cfg, logger)
     except (OSError, muitext.MuiTextError) as exc:
-        logger.warning("MUI 工具名汉化失败：%s", exc)
+        logger.warning("MUI 文本汉化失败：%s", exc)
         muitext_stats = {"error": str(exc)}
     return {
         "backup": str(snapshot),
