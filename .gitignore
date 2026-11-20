@@ -8,3 +8,4 @@ build/
 *.spec
 **/data/mui_dict.json
 .tmp/
+.trae-html-share-packages/
