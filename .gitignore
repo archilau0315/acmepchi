@@ -3,6 +3,8 @@ __pycache__/
 *.log
 dist/
 build/
+.pytest_cache/
+.screenshots/
 *.spec
 **/data/mui_dict.json
 .tmp/

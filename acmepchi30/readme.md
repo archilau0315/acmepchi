@@ -164,7 +164,7 @@ Both `we` and `we-restore` require MEP Designer to be closed; a running instance
 4. Click **检查环境 → 安装中文**, then restart MEP Designer.
 5. Use **还原英文** to roll back; backups live in `%LOCALAPPDATA%\ACMEPCHI\backup`.
 
-> exe 只适用于 MEP Designer 30；29 版需另建工具。 / The exe targets MEP Designer 30 only.
+> exe 只适用于 MEP Designer 30（build 3001）。 / The exe targets MEP Designer 30 (build 3001) only.
 
 ## 8. 打包 exe / Building the exe
 
