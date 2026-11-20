@@ -152,6 +152,19 @@
     font-size:14px;
     color:var(--muted);
   }
+  .repos{
+    margin-top:24px;
+    padding:18px 20px;
+    background:#faf8f3;
+    border:1px solid var(--line);
+    border-radius:10px;
+    font-size:14px;
+    color:#4a443b;
+  }
+  .repos p{margin:0 0 6px}
+  .repos-title{font-weight:600;color:var(--ink);letter-spacing:.04em}
+  .repos a{color:var(--accent);text-decoration:none;border-bottom:1px solid rgba(106,75,216,.3);word-break:break-all}
+  .repos-note{color:var(--muted);font-size:12.5px;margin-top:10px !important}
   @media (max-width:680px){
     .wrap{padding:20px 12px 40px}
     article{padding:32px 22px 40px;border-radius:12px}
@@ -174,7 +187,7 @@
   <p class="sub">把官方中文界面“搬”进 MEP Designer 30——一个内部汉化工具的使用手记</p>
   <p class="meta">2026 年 11 月 · 内部技术分享</p>
 
-  <p class="lead">在三维虚拟建造里，模型是共同语言，软件是工具。而界面语言，往往决定了团队能不能把注意力放在管线上，而不是放在猜菜单上。</p>
+  <p class="lead">在三维虚拟建造（VDC，Virtual Design and Construction）里，模型是共同语言，软件是工具。而界面语言，往往决定了团队能不能把注意力放在管线上，而不是放在猜菜单上。</p>
 
   <h2>一、一条管线背后的语言成本</h2>
   <p>MEP 设计的工作流并不复杂：建模、避让、算量、出图、交底。但当天花板下的风管、水管、桥架越来越密，团队之间的沟通就会变多——设计师看模型，施工方看剖面，运维方看属性。这个时候，如果软件界面是英文的，每一次交底都要多一句解释：“这个 Duct Route，就是风管路线。”</p>
@@ -241,6 +254,14 @@
   <p>把台阶拿掉，MEP 机电就能更自然地与你同行。</p>
 
   <p class="end">工具：ACMEPCHI · MEP Designer 30 中文界面移植工具（内部使用）<br>版本 0.1.0 · 支持图形界面与命令行 · 中英一键切换</p>
+
+  <div class="repos">
+    <p class="repos-title">项目仓库 · Repositories</p>
+    <p>GitHub：<a href="https://github.com/archilau0315/acmepchi">github.com/archilau0315/acmepchi</a></p>
+    <p>Gitee：<a href="https://gitee.com/archilau/acmepchi">gitee.com/archilau/acmepchi</a></p>
+    <p>下载：<a href="https://github.com/archilau0315/acmepchi/releases/download/v0.1.0/ACMEPCHI-30.exe">ACMEPCHI-30.exe（v0.1.0）</a></p>
+    <p class="repos-note">以上为内部仓库，需授权访问。</p>
+  </div>
 </article>
 </div>
 </body>
