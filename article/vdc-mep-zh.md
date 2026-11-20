@@ -90,4 +90,4 @@ MEP Designer 与 Archicad 同源，模型可以在建筑与机电之间顺畅衔
 - Gitee：<https://gitee.com/archilau/acmepchi>
 - 下载：[ACMEPCHI-30.exe（v0.1.0）](https://github.com/archilau0315/acmepchi/releases/download/v0.1.0/ACMEPCHI-30.exe)
 
-以上为内部仓库，需授权访问。
+以上仓库均为公开仓库，无需授权即可访问。
