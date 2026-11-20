@@ -19,6 +19,7 @@ The standalone MEP Designer 30 ships with an English (INT) UI only. This tool po
 | 位置 / Source | 内容 / Content | 处理方式 / Handling |
 |---|---|---|
 | `MEP Designer 30\en\*.mui` | 对话框、控件、提示文本 / dialogs, controls, hints | 用 Archicad 中文版同名文件覆盖 / overwritten by CHI satellites |
+| `MEP Designer 30\{en,zh-CN}\MEPPluginUI.dll.mui` | 工具名、MEP 工程工具第三级菜单 / tool names & MEP sub-menu | 改写内部 JSON 字符串表，等长替换 / in-place JSON text patch |
 | `Defaults\MEP Designer\WorkEnvironment\*.xml` | 菜单标题、工具面板分组名 / menu titles, palette groups | 词典 + 手工词表原位替换 / in-place replacement |
 | `%APPDATA%\GRAPHISOFT\MEP Designer 30*\**\*.bin` | 用户级界面文案缓存 / user-level UI text cache | UTF-16LE 等长替换 / length-preserving replacement |
 
@@ -53,8 +54,10 @@ acmepchi/
 │  ├─ installer.py                检测/安装/还原编排 · install orchestration
 │  ├─ dictbuild.py                英中词典构建与缓存 · EN→ZH dictionary builder
 │  ├─ wepatch.py                  工作环境 XML / bin 汉化 · work-environment patcher
+│  ├─ muitext.py                  MUI 字符串表工具名汉化 · MUI string-table patcher
 │  ├─ we_i18n.py                  菜单标题按 GUID 对齐 · menu titles by GUID
 │  ├─ data/mep_terms.json         手工词表 · curated term list
+│  ├─ data/mep_ui_terms.json      工具名词表 · tool-name term list
 │  ├─ data/mui_dict.json          词典缓存（自动生成）· dictionary cache
 │  ├─ cli.py                      命令行入口 · CLI
 │  └─ gui.py                      图形界面 · GUI

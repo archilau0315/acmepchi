@@ -6,7 +6,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from . import backup, paths, verify, wepatch
+from . import backup, muitext, paths, verify, wepatch
 
 
 def _app_running(exe_name: str) -> bool:
@@ -107,12 +107,20 @@ def install(cfg: dict, logger, mode: str | None = None) -> dict:
     except (OSError, wepatch.WorkEnvError) as exc:
         logger.warning("工作环境汉化失败：%s", exc)
         workenv = {"error": str(exc)}
+
+    # 再把 MEP 工具名写进 MUI 字符串表（en 与 zh-CN 两份都改，防语言回退）
+    try:
+        muitext_stats = muitext.apply(cfg, logger)
+    except (OSError, muitext.MuiTextError) as exc:
+        logger.warning("MUI 工具名汉化失败：%s", exc)
+        muitext_stats = {"error": str(exc)}
     return {
         "backup": str(snapshot),
         "copied": copied,
         "remaining": while_after["to_copy"],
         "mode": mode,
         "workenv": workenv,
+        "muitext": muitext_stats,
     }
 
 
