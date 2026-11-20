@@ -76,6 +76,7 @@ The MEP Designer 30 toolchain is complete and verified end to end: satellite mig
 **中文**
 
 - **环境检测**：自动定位 MEP Designer 30 与 Archicad 30 安装目录，校验构建号与语言目录。
+- **一键中英切换**：`en` 目录保持英文原版，中文只写入 `zh-CN`；切换仅改写语言标识与 5 个工作环境文件，约 1 秒完成。
 - **全量资源迁移**：85 个 `.mui` 卫星文件按文件名 1:1 映射复制，自动跳过有兼容性风险的文件。
 - **MUI 文本汉化**：解析 PE 资源树，重写 `MEPPluginUI.dll.mui` 内的 JSON 界面文案（约 660 条英中对照表），文件长度不变。
 - **工作环境汉化**：菜单标题、工具面板分组名原位替换，已是中文的内容不会被二次处理（幂等）。
@@ -85,6 +86,7 @@ The MEP Designer 30 toolchain is complete and verified end to end: satellite mig
 **English**
 
 - **Environment check** — locates MEP Designer 30 and Archicad 30, validates build number and language folders.
+- **One-click EN/ZH switch** — `en` stays pristine, Chinese lives only in `zh-CN`; switching rewrites the language marker plus five work-environment files (~1 s).
 - **Full satellite migration** — copies 85 `.mui` files with 1:1 name mapping, skipping files known to be incompatible.
 - **MUI text localisation** — parses the PE resource tree and rewrites the JSON UI strings inside `MEPPluginUI.dll.mui` (~660 EN→ZH entries) without changing file size.
 - **Work-environment localisation** — in-place replacement of menu titles and palette group names; already-Chinese content is never touched (idempotent).
@@ -130,6 +132,9 @@ $env:PYTHONPATH = "$PWD\src"
 python -m acme_lp.cli status       # 检查环境 · environment check
 python -m acme_lp.cli preview      # 预览将覆盖的文件 · preview planned writes
 python -m acme_lp.cli install      # 备份 + 安装 MUI，末尾自动执行 we · install (+ we)
+python -m acme_lp.cli lang         # 中英互切 · toggle EN ↔ ZH
+python -m acme_lp.cli lang --to en # 切到英文 · switch to English
+python -m acme_lp.cli lang --to zh # 切到中文 · switch to Chinese
 python -m acme_lp.cli restore      # 还原 MUI · restore MUI
 python -m acme_lp.cli we           # 仅汉化工作环境 · patch work environment only
 python -m acme_lp.cli we-restore   # 还原工作环境 · roll back work environment
@@ -187,6 +192,7 @@ acmepchi/
    │  ├─ backup.py                 # 备份、还原、清单哈希 / backup & restore
    │  ├─ verify.py                 # 资源比对与安装计划 / resource diff & install plan
    │  ├─ installer.py              # 检测/安装/还原编排 / install orchestration
+   │  ├─ langswitch.py             # 中英一键切换 / EN↔ZH switcher
    │  ├─ dictbuild.py              # 英中词典构建与缓存 / EN→ZH dictionary builder
    │  ├─ muitext.py                # MUI 文本汉化（PE + JSON）/ MUI text patcher
    │  ├─ wepatch.py                # 工作环境 XML 汉化 / work-environment XML patcher
@@ -211,6 +217,7 @@ acmepchi/
 | 卫星迁移 / Satellites | `mui-map.json` 决定产品名、构建号与排除名单，按文件名 1:1 复制到目标语言目录 |
 | MUI 文本 / MUI text | 解析 DOS/NT 头与资源树，取出 JSNL 2000~2004 正文，按对照表重写 JSON，容量不足时压缩分隔符并补空格 |
 | 工作环境 / Work environment | 只替换 `<Name>英文</Name>` 与 `title="英文"`，要求纯 ASCII 且命中词表；XML 实体自动转义 |
+| 切换语言 / Switching | 只改 `uilanguage.dat` 并互换 5 个工作环境文件；`en` 目录始终为英文原版，中文仅存在于 `zh-CN` |
 | 幂等 / Idempotent | 已是中文的内容不会再命中英文键，重复执行命中数为 0 |
 
 ---

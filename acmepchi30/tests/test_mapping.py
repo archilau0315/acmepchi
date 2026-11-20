@@ -5,7 +5,7 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
-from acme_lp import installer, paths, verify
+from acme_lp import installer, langswitch, paths, verify
 
 
 class MappingTest(unittest.TestCase):
@@ -31,6 +31,23 @@ class MappingTest(unittest.TestCase):
         if info["errors"] or not info["target_version"]:
             self.skipTest("未安装 MEP Designer 30")
         self.assertIn(self.cfg["target_build"], info["target_version"])
+
+    def test_lang_normalize(self) -> None:
+        for raw in ("en", "EN", "英文"):
+            self.assertEqual(langswitch.normalize(raw), "en")
+        for raw in ("zh", "zh-CN", "zh_CN", "中文"):
+            self.assertEqual(langswitch.normalize(raw), "zh-CN")
+        with self.assertRaises(langswitch.LangSwitchError):
+            langswitch.normalize("de")
+
+    def test_lang_status_without_install(self) -> None:
+        state = langswitch.status(self.cfg)
+        self.assertIn("current", state)
+        self.assertIn(state["current"], ("", "en", "zh-CN"))
+        info = installer.detect(self.cfg)
+        if info["errors"] or not info["target_dir"]:
+            return
+        self.assertEqual(state["target_dir"], str(info["target_dir"]))
 
 
 if __name__ == "__main__":

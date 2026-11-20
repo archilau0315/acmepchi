@@ -108,12 +108,16 @@ def install(cfg: dict, logger, mode: str | None = None) -> dict:
         logger.warning("工作环境汉化失败：%s", exc)
         workenv = {"error": str(exc)}
 
-    # 再把 MEP 的界面文本（工具名、对话框、提示）写进 MUI（en 与 zh-CN 两份都改，防语言回退）
+    # 再把 MEP 的界面文本（工具名、对话框、提示）写进 zh-CN 的 MUI
     try:
         muitext_stats = muitext.apply(cfg, logger)
     except (OSError, muitext.MuiTextError) as exc:
         logger.warning("MUI 文本汉化失败：%s", exc)
         muitext_stats = {"error": str(exc)}
+
+    # en 目录必须保持英文原版，否则切回英文时工具名/对话框仍是中文
+    if mode == "switch" and muitext.restore_english(cfg):
+        logger.info("已把 en 目录的 MUI 还原为英文原版")
     return {
         "backup": str(snapshot),
         "copied": copied,

@@ -17,7 +17,6 @@ from pathlib import Path
 from . import paths
 
 MUI_NAME = "MEPPluginUI.dll.mui"
-LANG_DIRS = ("en", "zh-CN")
 JSON_RIDS = (2000, 2001, 2002, 2003, 2004)
 
 # 会显示给用户的字符串字段；name 仅在对话框/告警条目里翻译
@@ -173,14 +172,19 @@ def patch_file(path: Path, mapping: dict[str, str] | None = None, dry_run: bool 
     return {"hits": total, "skipped": skipped}
 
 
-def apply(cfg: dict, logger, dry_run: bool = False) -> dict:
-    """处理安装目录下各语言版本的 MEPPluginUI.dll.mui。"""
+def apply(cfg: dict, logger, dry_run: bool = False, langs: tuple[str, ...] | None = None) -> dict:
+    """处理安装目录下指定语言目录的 MEPPluginUI.dll.mui（默认只改目标语言）。
+
+    en 目录保持英文原版，这样切换回英文时无需重新安装资源。
+    """
     mep = paths.find_product_dir(cfg, "target")
     if not mep:
         raise MuiTextError(f"未找到 {cfg['product_install_dir']} 安装目录")
+    if langs is None:
+        langs = (cfg.get("target_language_dir") or "zh-CN",)
     mapping = _load_map()
     files: dict[str, dict] = {}
-    for lang in dict.fromkeys(LANG_DIRS + (cfg.get("target_language_dir", ""),)):
+    for lang in dict.fromkeys(langs):
         target = mep / lang / MUI_NAME
         if lang and target.is_file():
             files[f"{lang}/{MUI_NAME}"] = patch_file(target, mapping, dry_run)
@@ -193,3 +197,18 @@ def apply(cfg: dict, logger, dry_run: bool = False) -> dict:
             if item["skipped"]:
                 logger.warning("%s 内容超长已跳过：%s", name, ", ".join(item["skipped"]))
     return {"files": files, "total": total, "dry_run": dry_run, "time": datetime.now().strftime("%H:%M:%S")}
+
+
+def restore_english(cfg: dict) -> int:
+    """把 en 目录被汉化过的 MUI 还原为英文原版（使用同目录 .bak-zhpatch）。"""
+    mep = paths.find_product_dir(cfg, "target")
+    if not mep:
+        return 0
+    target = mep / "en" / MUI_NAME
+    backup = target.with_suffix(target.suffix + ".bak-zhpatch")
+    if not (target.is_file() and backup.is_file()):
+        return 0
+    if target.read_bytes() == backup.read_bytes():
+        return 0
+    shutil.copy2(backup, target)
+    return 1

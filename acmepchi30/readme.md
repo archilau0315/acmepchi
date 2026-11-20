@@ -52,6 +52,7 @@ acmepchi/
 │  ├─ backup.py                   备份、还原、清单哈希 · backup & restore
 │  ├─ verify.py                   资源比对与安装计划 · resource diff & install plan
 │  ├─ installer.py                检测/安装/还原编排 · install orchestration
+│  ├─ langswitch.py               中英一键切换 · EN↔ZH switcher
 │  ├─ dictbuild.py                英中词典构建与缓存 · EN→ZH dictionary builder
 │  ├─ wepatch.py                  工作环境 XML / bin 汉化 · work-environment patcher
 │  ├─ muitext.py                  MUI 文本汉化（PE + JSON）· MUI text patcher (PE + JSON)
@@ -75,7 +76,10 @@ acmepchi/
 ### 图形界面（推荐）/ GUI (recommended)
 
 双击 `bin\acmepchi.bat` → 依次点 **检查环境 → 安装中文**；还原点 **还原英文**。
-Double-click `bin\acmepchi.bat`, then **检查环境 → 安装中文**; use **还原英文** to roll back.
+双击 `bin\acmepchi.bat`, then **检查环境 → 安装中文**; use **还原英文** to roll back.
+
+装好后可用 **切换为英文 / 切换为中文** 按钮随时互切（约 1 秒，需先退出 MEP Designer）。
+After installation, the **切换为英文 / 切换为中文** button switches languages in about a second (MEP Designer must be closed).
 
 ### 命令行 / CLI
 
@@ -84,6 +88,9 @@ $env:PYTHONPATH = "e:\works\Aidev\AddOn\acmepchi\acmepchi30\src"
 python -m acme_lp.cli status       # 检查环境 · environment check
 python -m acme_lp.cli preview      # 预览将覆盖的文件 · preview
 python -m acme_lp.cli install      # 备份 + 安装 MUI，末尾自动执行 we · install (+ we)
+python -m acme_lp.cli lang         # 中英互切 · toggle EN ↔ ZH
+python -m acme_lp.cli lang --to en # 切到英文 · switch to English
+python -m acme_lp.cli lang --to zh # 切到中文 · switch to Chinese
 python -m acme_lp.cli restore      # 还原 MUI · restore MUI
 python -m acme_lp.cli we --dry-run # 只统计工作环境命中数 · stats only
 python -m acme_lp.cli we           # 汉化工作环境 XML 与 bin · patch WE files
@@ -136,6 +143,7 @@ Both `we` and `we-restore` require MEP Designer to be closed; a running instance
 - 不要删除 `Standard Commands 30.bin`，删除会导致“设计菜单消失”。
 - MEP Designer 是**单独授权产品**，无授权时只能进入演示模式；本工具不涉及授权。
 - 升级 MEP Designer 后资源版本会变化，请先 `we-restore` / `restore` 再重新 `install`。
+- `en` 目录始终保持英文原版，中文只写入 `zh-CN`，因此中英互切不会残留对方语言的文本。
 - 内部使用，请勿向外分发移植后的资源包。
 
 ---

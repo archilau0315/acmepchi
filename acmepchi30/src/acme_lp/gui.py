@@ -7,7 +7,7 @@ import subprocess
 import tkinter as tk
 from tkinter import messagebox, scrolledtext
 
-from . import __version__, backup, installer, paths
+from . import __version__, backup, installer, langswitch, paths
 
 
 class App:
@@ -31,13 +31,15 @@ class App:
 
         bar = tk.Frame(root)
         bar.pack(fill="x", padx=16, pady=10)
+        self.toggle_btn = tk.Button(bar, text="切换为英文", command=self.on_toggle, width=12, height=1)
         for text, command, width in (
             ("检查环境", self.on_status, 10),
             ("安装中文", self.on_install, 10),
             ("还原英文", self.on_restore, 10),
-            ("打开备份目录", self.on_open_backup, 12),
         ):
             tk.Button(bar, text=text, command=command, width=width, height=1).pack(side="left", padx=(0, 8))
+        self.toggle_btn.pack(side="left", padx=(0, 8))
+        tk.Button(bar, text="打开备份目录", command=self.on_open_backup, width=12, height=1).pack(side="left", padx=(0, 8))
 
         self.log = scrolledtext.ScrolledText(root, wrap="word", font=("Consolas", 9))
         self.log.pack(fill="both", expand=True, padx=16, pady=(0, 14))
@@ -49,8 +51,16 @@ class App:
         self.log.see("end")
         self.root.update_idletasks()
 
+    def _refresh_toggle_label(self) -> None:
+        current = langswitch.current(self.cfg)
+        self.toggle_btn.config(
+            text="切换为英文" if current == "zh-CN" else "切换为中文",
+            state="normal" if current else "disabled",
+        )
+
     def on_status(self) -> None:
         info = installer.detect(self.cfg)
+        self._refresh_toggle_label()
         self.sub.config(
             text=f"目标：{info['target_dir']}\n来源：{info['source_dir']}\n"
             f"版本：MEP {info['target_version'] or '未知'} / Archicad {info['source_version'] or '未知'}，当前语言 {info['target_uilanguage'] or '未知'}"
@@ -81,17 +91,35 @@ class App:
         self.write(f"复制：{len(result['copied'])} 个，剩余差异：{len(result['remaining'])} 个")
         self.write("请启动 MEP Designer 30（演示模式亦可）确认界面语言。")
 
+    def on_toggle(self) -> None:
+        target = "英文" if langswitch.current(self.cfg) == "zh-CN" else "中文"
+        if not messagebox.askokcancel("切换语言", f"将把 MEP Designer 界面切换为{target}，请先完全退出程序。继续？"):
+            return
+        try:
+            result = langswitch.toggle(self.cfg, self.logger)
+        except langswitch.LangSwitchError as exc:
+            messagebox.showerror("无法切换", str(exc))
+            return
+        except OSError as exc:
+            messagebox.showerror("无法切换", f"文件读写失败（请确认以管理员身份运行）：\n{exc}")
+            return
+        self.write("—— 语言切换 ——")
+        self.write(f"{result['from'] or '未知'} -> {result['to']}，卫星资源更新 {result['copied']} 个")
+        self.write(f"请重新启动 MEP Designer 查看{target}界面。")
+        self._refresh_toggle_label()
+
     def on_restore(self) -> None:
         try:
-            result = installer.restore_latest(self.cfg, self.logger)
-        except installer.GuardError as exc:
+            result = langswitch.switch(self.cfg, self.logger, "en")
+        except langswitch.LangSwitchError as exc:
             messagebox.showerror("无法还原", str(exc))
             return
         except OSError as exc:
             messagebox.showerror("无法还原", f"文件读写失败（请确认以管理员身份运行）：\n{exc}")
             return
-        self.write("—— 已还原 ——")
-        self.write(f"来源备份：{result['backup']}，还原 {result['restored']} 个文件")
+        self.write("—— 已切换回英文 ——")
+        self.write(f"工作环境还原：{result.get('workenv', '无')}")
+        self._refresh_toggle_label()
 
     def on_open_backup(self) -> None:
         paths.BACKUP_ROOT.mkdir(parents=True, exist_ok=True)

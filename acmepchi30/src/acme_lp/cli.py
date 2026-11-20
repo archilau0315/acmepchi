@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import argparse
 
-from . import backup, installer, paths, we_i18n, wepatch
+from . import backup, installer, langswitch, paths, we_i18n, wepatch
 
 
 def _print_detect(info: dict) -> None:
@@ -16,8 +16,9 @@ def _print_detect(info: dict) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(prog="acmepchi", description="MEP Designer 30 中文资源移植工具")
-    parser.add_argument("command", choices=["status", "preview", "install", "restore", "backups", "menu", "menu-restore", "we", "we-restore"])
+    parser.add_argument("command", choices=["status", "preview", "install", "restore", "backups", "lang", "menu", "menu-restore", "we", "we-restore"])
     parser.add_argument("--mode", choices=["replace", "switch"], default=None, help="replace=覆盖 en 目录；switch=新建 zh-CN 并切换语言")
+    parser.add_argument("--to", choices=["en", "zh", "toggle"], default="toggle", help="lang 子命令：切到英文/中文，默认互切")
     parser.add_argument("--dry-run", action="store_true", help="只统计，不写入")
     parser.add_argument("--fix-length", action="store_true", help="bin 替换时同时把长度字段改为中文字符数（默认保持原长度）")
     args = parser.parse_args()
@@ -53,6 +54,22 @@ def main() -> int:
         result = installer.install(cfg, logger, args.mode)
         print(f"备份：{result['backup']}")
         print(f"复制：{len(result['copied'])} 个，剩余差异：{len(result['remaining'])} 个")
+        return 0
+
+    if args.command == "lang":
+        try:
+            state = langswitch.status(cfg)
+            if args.to == "toggle" and not state["zh_ready"] and state["current"] != "zh-CN":
+                print("中文资源尚未安装，请先执行 install")
+                return 1
+            result = langswitch.toggle(cfg, logger) if args.to == "toggle" else langswitch.switch(cfg, logger, args.to)
+        except (langswitch.LangSwitchError, OSError) as exc:
+            print(f"[!] {exc}")
+            return 2
+        if not result["changed"]:
+            print(f"当前已是 {result['to']}，无需切换")
+        else:
+            print(f"已切换：{result['from'] or '未知'} -> {result['to']}（复制 {result['copied']} 个卫星文件）")
         return 0
 
     if args.command == "menu":
